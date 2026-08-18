@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dog Bowl Monitor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1>Water Bowl</h1>
+      <span id="conn" class="conn" data-state="connecting">connecting...</span>
+    </header>
+
+    <section class="card" id="card" data-state="unknown">
+      <div class="status-row">
+        <span id="badge" class="badge">--</span>
+        <span id="updated" class="updated">waiting for data...</span>
+      </div>
+
+      <div class="reading">
+        <span id="weight" class="weight">--</span>
+        <span class="unit">g</span>
+      </div>
+
+      <div class="meter" aria-hidden="true">
+        <div id="meterFill" class="meter-fill"></div>
+        <div id="meterMark" class="meter-mark" title="low-water threshold"></div>
+      </div>
+
+      <p id="hint" class="hint"></p>
+    </section>
+
+    <section class="card">
+      <h2>Recent history</h2>
+      <svg id="chart" class="chart" viewBox="0 0 600 160" preserveAspectRatio="none"
+           role="img" aria-label="Recent water level readings"></svg>
+      <p id="chartEmpty" class="hint">No readings logged yet.</p>
+    </section>
+
+    <footer class="foot">
+      <span id="thresholds"></span>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
