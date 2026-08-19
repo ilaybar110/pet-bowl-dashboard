@@ -1,8 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, doc, onSnapshot, collection, query, orderBy, limit,
+  doc, onSnapshot, collection, query, orderBy, limit,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { db, configured, relativeTime } from "./shared.js";
 
 // If the device stops reporting for this long, the reading on screen is no
 // longer trustworthy -- most likely the ESP32 lost WiFi or power.
@@ -46,7 +45,7 @@ const el = {
   thresholds: document.getElementById("thresholds"),
 };
 
-if (firebaseConfig.apiKey.startsWith("PASTE_")) {
+if (!configured) {
   el.conn.textContent = "not configured";
   el.conn.dataset.state = "error";
   el.hint.textContent =
@@ -54,20 +53,7 @@ if (firebaseConfig.apiKey.startsWith("PASTE_")) {
   throw new Error("firebase-config.js still has placeholder values");
 }
 
-const db = getFirestore(initializeApp(firebaseConfig));
-
 let latest = null;
-
-function relativeTime(date) {
-  const secs = Math.round((Date.now() - date.getTime()) / 1000);
-  if (secs < 10) return "just now";
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.round(secs / 60);
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-}
 
 // Counting the number up/down matches the water's glide -- snapping the digits
 // while the level animates looks broken.
@@ -216,10 +202,10 @@ function renderRefills(rows) {
     const when = r.at.toLocaleString([], {
       weekday: "short", hour: "2-digit", minute: "2-digit",
     });
-    return `<li class="refill-row">
-      <span class="refill-when">${when}</span>
-      <span class="refill-ago">${relativeTime(r.at)}</span>
-      <span class="refill-amt">+${Math.round(r.amountG)} g</span>
+    return `<li class="event-row">
+      <span class="event-when">${when}</span>
+      <span class="event-ago">${relativeTime(r.at)}</span>
+      <span class="event-amt refill">+${Math.round(r.amountG)} ml</span>
     </li>`;
   }).join("");
 }

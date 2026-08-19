@@ -83,8 +83,65 @@
     </section>
 
     <section class="card">
+      <h2>Today's drinking</h2>
+      <div class="today-top">
+        <div class="today-figure">
+          <span id="todayMl" class="today-ml">--</span><span class="today-unit">ml</span>
+        </div>
+        <div class="today-meta">
+          <span id="todaySessions">--</span>
+          <span id="lastDrink">--</span>
+        </div>
+      </div>
+      <div class="range-bar">
+        <div id="rangeBand" class="range-band"></div>
+        <div id="rangeFill" class="range-fill"></div>
+      </div>
+      <p id="rangeNote" class="hint"></p>
+    </section>
+
+    <section class="card">
+      <h2>When your dog drinks today</h2>
+      <svg id="hourlyChart" class="chart hourly" viewBox="0 0 600 150"
+           role="img" aria-label="Water drunk by hour of day"></svg>
+      <p id="hourlyNote" class="hint"></p>
+    </section>
+
+    <section class="card">
+      <h2>Weekly pattern</h2>
+      <div id="heatmap" class="heatmap"></div>
+      <p id="heatNote" class="hint">Darker means more water drunk in that hour.</p>
+    </section>
+
+    <section class="card">
+      <h2>Daily intake</h2>
+      <svg id="dailyChart" class="chart" viewBox="0 0 600 190"
+           role="img" aria-label="Daily water intake history"></svg>
+      <p id="trendNote" class="hint"></p>
+    </section>
+
+    <section class="card" id="healthCard">
+      <h2>Health check</h2>
+      <div id="healthBody" class="health-body">
+        <p class="hint">Building a baseline. This needs about a week of data.</p>
+      </div>
+      <p class="disclaimer">
+        This is a trend from a water bowl, not a medical test. Changes in
+        drinking can have ordinary causes (heat, exercise, a change of food).
+        It is only worth raising with your vet if a change persists.
+      </p>
+      <button id="exportCsv" class="btn" type="button">Download data for your vet</button>
+    </section>
+
+    <section class="card">
+      <h2>Recent drinks</h2>
+      <ul id="drinkList" class="event-list"></ul>
+      <p id="drinkEmpty" class="hint">No drinks recorded yet.</p>
+    </section>
+
+    <section class="card">
       <h2>Recent refills</h2>
-      <ul id="refillList" class="refill-list"></ul>
+      <ul id="refillList" class="event-list"></ul>
       <p id="refillEmpty" class="hint">No refills recorded yet.</p>
     </section>
 
@@ -101,5 +158,6 @@
   </main>
 
   <script type="module" src="app.js"></script>
+  <script type="module" src="stats.js"></script>
 </body>
 </html>

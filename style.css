@@ -234,9 +234,9 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 
 .hint { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; text-align: center; }
 
-.refill-list { list-style: none; margin: 0; padding: 0; }
+.event-list { list-style: none; margin: 0; padding: 0; }
 
-.refill-row {
+.event-row {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
@@ -245,16 +245,179 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   font-size: 0.88rem;
 }
 
-.refill-row:last-child { border-bottom: none; }
+.event-row:last-child { border-bottom: none; }
 
-.refill-when { flex: 1; }
-.refill-ago { color: var(--muted); font-size: 0.8rem; }
+.event-when { flex: 1; }
+.event-ago { color: var(--muted); font-size: 0.8rem; }
 
-.refill-amt {
+.event-amt {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  color: var(--ok);
 }
+
+/* Water added by a human vs water taken by the dog -- different directions,
+   so different colours. */
+.event-amt.refill { color: var(--ok); }
+.event-amt.drink { color: var(--accent); }
+
+/* ---------- Today's drinking ---------- */
+
+.today-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.today-figure { display: flex; align-items: baseline; gap: 0.2rem; }
+
+.today-ml {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.today-unit { font-size: 1rem; font-weight: 700; color: var(--muted); }
+
+.today-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* The band marks the healthy daily range; the fill is today's total, so the
+   comparison is visible without reading any numbers. */
+.range-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--stale-bg);
+  overflow: hidden;
+  margin: 0.9rem 0 0.2rem;
+}
+
+.range-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--ok);
+  opacity: 0.22;
+}
+
+.range-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.8s cubic-bezier(0.33, 1, 0.68, 1), background 0.3s ease;
+}
+
+.range-fill[data-state="in"] { background: var(--ok); }
+.range-fill[data-state="over"] { background: var(--low); }
+
+/* ---------- Charts ---------- */
+
+.hourly { height: 150px; }
+
+.hbar { fill: var(--accent); opacity: 0.85; }
+.dbar { fill: var(--accent); }
+/* Today is still filling up, so it shouldn't look like a completed short day. */
+.dbar.partial { fill: var(--accent); opacity: 0.4; }
+.band { fill: var(--ok); opacity: 0.15; }
+.axis { fill: var(--muted); font-size: 11px; }
+
+/* ---------- Heatmap ---------- */
+
+.heatmap { display: flex; flex-direction: column; gap: 3px; }
+
+.heat-row { display: flex; align-items: center; gap: 0.5rem; }
+
+.heat-label {
+  width: 2.4rem;
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.heat-cells { display: flex; gap: 2px; flex: 1; }
+
+.heat-cell {
+  flex: 1;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--accent);
+  /* --i is set per cell from the hour's share of the week's peak. */
+  opacity: calc(0.06 + var(--i) * 0.94);
+}
+
+/* ---------- Health ---------- */
+
+.health-headline {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.health-headline[data-state="ok"] { color: var(--ok); }
+.health-headline[data-state="warn"] { color: var(--low); }
+
+.health-detail { font-size: 0.88rem; margin: 0 0 0.9rem; color: var(--text); }
+
+.health-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+}
+
+.health-stats div {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+.health-stats dt {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.health-stats dd {
+  margin: 0.1rem 0 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.disclaimer {
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-left: 3px solid var(--line);
+  padding-left: 0.7rem;
+  margin: 0 0 0.9rem;
+}
+
+.btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.btn:hover { border-color: var(--accent); color: var(--accent); }
 
 .chart { width: 100%; height: 160px; display: block; }
 .chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
