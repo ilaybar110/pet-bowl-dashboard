@@ -1,103 +1,396 @@
+﻿/* Bowl -- restyled dashboard surface.
+   Same markup contract as index.html (identical ids and JS-generated class
+   names), so app.js and stats.js drive this page unchanged.
+
+   Mobile first: every base rule below is the phone layout. The two
+   breakpoints (600px, 900px) only ever add, never undo. This is a glance
+   surface -- someone checking whether the bowl needs filling on the way
+   past it -- so the live state has to fit on one screen without scrolling. */
+
 :root {
-  --bg: #f5f6f8;
-  --card: #ffffff;
-  --text: #1a1d21;
-  --muted: #6b7280;
-  --line: #e3e6ea;
-  --ok: #15803d;
-  --ok-bg: #dcfce7;
-  --low: #b91c1c;
-  --low-bg: #fee2e2;
-  --stale: #6b7280;
-  --stale-bg: #e5e7eb;
-  --accent: #2563eb;
+  /* One neutral family throughout -- cool slate. Mixing warm and cool greys
+     in one product is the fastest way to make a UI look assembled. */
+  --bg: #f6f7f9;
+  --bg-sunk: #eef0f3;
+  --surface: #ffffff;
+  --line: rgba(15, 23, 32, 0.09);
+  --line-strong: rgba(15, 23, 32, 0.16);
 
-  --water-top: #7dd3fc;
-  --water-bot: #0284c7;
+  --text: #14181d;
+  --text-2: #4b5560;
+  --muted: #7b8792;
 
-  --glass-fill: rgba(120, 150, 180, 0.10);
-  --glass-edge: rgba(90, 115, 145, 0.55);
-  --glass-soft: rgba(90, 115, 145, 0.28);
-  --glass-shine: rgba(255, 255, 255, 0.85);
+  /* A single accent, desaturated: water. Everything else is state. */
+  --accent: #2b76c4;
+  --accent-soft: rgba(43, 118, 196, 0.12);
+
+  --ok: #14724c;
+  --ok-bg: rgba(20, 114, 76, 0.11);
+  --low: #a8324a;
+  --low-bg: rgba(168, 50, 74, 0.11);
+  --stale: #7b8792;
+  --stale-bg: rgba(123, 135, 146, 0.13);
+
+  --water-top: #7cc0ea;
+  --water-bot: #2b76c4;
+
+  /* Background wash. Three hues stepping along the water end of the wheel --
+     deep blue, aqua, a green-leaning teal. Analogous, never complementary:
+     a wash that spans the wheel reads as decoration, one that stays in a
+     neighbourhood reads as light. */
+  --wash-1: 43, 118, 196;
+  --wash-2: 42, 165, 178;
+  --wash-3: 88, 160, 132;
+  --wash-a: 0.16;
+
+  --glass-fill: rgba(120, 150, 180, 0.09);
+  --glass-edge: rgba(70, 95, 122, 0.5);
+  --glass-soft: rgba(70, 95, 122, 0.24);
+  --glass-shine: rgba(255, 255, 255, 0.9);
+
+  /* Diffusion shadow: wide, faint, tinted to the ground rather than black. */
+  --lift: 0 1px 2px rgba(15, 23, 32, 0.04),
+          0 18px 40px -22px rgba(15, 23, 32, 0.22);
+  --lift-hover: 0 1px 2px rgba(15, 23, 32, 0.05),
+                0 28px 56px -24px rgba(15, 23, 32, 0.28);
+
+  --r-lg: 28px;
+  --r-md: 16px;
+  --r-sm: 10px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14171a;
-    --card: #1c2024;
-    --text: #e8eaed;
-    --muted: #9aa3ad;
-    --line: #2c3238;
-    --ok: #4ade80;
-    --ok-bg: #14361f;
-    --low: #f87171;
-    --low-bg: #3d1616;
-    --stale: #9aa3ad;
-    --stale-bg: #2c3238;
-    --accent: #60a5fa;
+    /* Off-black, never #000 -- pure black kills the shadow language. */
+    --bg: #101317;
+    --bg-sunk: #0b0e11;
+    --surface: #171b20;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.15);
 
-    --water-top: #38bdf8;
-    --water-bot: #0369a1;
+    --text: #e9ecef;
+    --text-2: #aeb7c0;
+    --muted: #7f8a95;
 
-    --glass-fill: rgba(180, 205, 230, 0.07);
-    --glass-edge: rgba(190, 210, 235, 0.45);
-    --glass-soft: rgba(190, 210, 235, 0.20);
-    --glass-shine: rgba(255, 255, 255, 0.35);
+    --accent: #5aa6e0;
+    --accent-soft: rgba(90, 166, 224, 0.14);
+
+    --ok: #4bbd8a;
+    --ok-bg: rgba(75, 189, 138, 0.13);
+    --low: #e0798f;
+    --low-bg: rgba(224, 121, 143, 0.13);
+    --stale: #7f8a95;
+    --stale-bg: rgba(127, 138, 149, 0.15);
+
+    --water-top: #4aa8e2;
+    --water-bot: #17527f;
+
+    /* Brighter hues at a lower alpha: on an off-black ground the same colours
+       would silt up into grey mud rather than reading as light. */
+    --wash-1: 74, 168, 226;
+    --wash-2: 56, 190, 200;
+    --wash-3: 96, 186, 150;
+    --wash-a: 0.13;
+
+    --glass-fill: rgba(180, 205, 230, 0.06);
+    --glass-edge: rgba(190, 210, 235, 0.42);
+    --glass-soft: rgba(190, 210, 235, 0.18);
+    --glass-shine: rgba(255, 255, 255, 0.3);
+
+    --lift: 0 1px 2px rgba(0, 0, 0, 0.4),
+            0 18px 40px -22px rgba(0, 0, 0, 0.8);
+    --lift-hover: 0 1px 2px rgba(0, 0, 0, 0.45),
+                  0 28px 56px -24px rgba(0, 0, 0, 0.9);
   }
 }
 
 * { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
   margin: 0;
-  padding: 1.5rem 1rem 3rem;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* 16px base is deliberate: iOS Safari zooms the viewport on any control
+     below it, and a zoomed dashboard never zooms back out. */
+  font: 400 16px/1.55 var(--sans);
+  letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  /* A single stray wide child would otherwise let the whole page slide
+     sideways under the thumb. */
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
-.wrap { max-width: 640px; margin: 0 auto; }
+/* ---------- Background wash ---------- */
 
-.head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+/* z-index -1 puts this above the canvas colour (body's background propagates
+   there) but under every in-flow element, so no content needs stacking of
+   its own to sit on top. */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; }
-h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 600; }
-
-.conn { font-size: 0.8rem; color: var(--muted); }
-.conn[data-state="live"] { color: var(--ok); }
-.conn[data-state="error"] { color: var(--low); }
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+/* Soft-stopped radial gradients rather than a hard circle behind a
+   filter: blur(). The blur version looks identical and costs a full-screen
+   offscreen buffer on every frame it moves -- which a phone pays for. */
+.wash {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
 }
 
-.status-row {
+.wash-1 {
+  top: -28vh;
+  left: -18vw;
+  width: 86vw;
+  height: 86vw;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--wash-1), var(--wash-a)), rgba(var(--wash-1), 0) 100%);
+  animation: drift-a 34s ease-in-out infinite alternate;
+}
+
+.wash-2 {
+  top: 18vh;
+  right: -26vw;
+  width: 78vw;
+  height: 78vw;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--wash-2), var(--wash-a)), rgba(var(--wash-2), 0) 100%);
+  animation: drift-b 43s ease-in-out infinite alternate;
+}
+
+/* Anchored to the bottom of the viewport, not the document: with the layer
+   fixed, a wash placed down-page would simply never be seen. */
+.wash-3 {
+  bottom: -34vh;
+  left: 22vw;
+  width: 72vw;
+  height: 72vw;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--wash-3), calc(var(--wash-a) * 0.85)), rgba(var(--wash-3), 0) 100%);
+  animation: drift-c 51s ease-in-out infinite alternate;
+}
+
+@media (min-width: 900px) {
+  .wash-1 { width: 52vw; height: 52vw; }
+  .wash-2 { width: 46vw; height: 46vw; }
+  .wash-3 { width: 44vw; height: 44vw; }
+}
+
+/* Transform only, and slow enough to be felt rather than watched -- a full
+   cycle takes longer than anyone looks at the page. */
+@keyframes drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(6vw, 5vh, 0) scale(1.12); }
+}
+
+@keyframes drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.06); }
+  to { transform: translate3d(-7vw, 7vh, 0) scale(0.94); }
+}
+
+@keyframes drift-c {
+  from { transform: translate3d(0, 0, 0) scale(0.96); }
+  to { transform: translate3d(5vw, -6vh, 0) scale(1.1); }
+}
+
+/* A whisper of tooth over the flat fills. Fixed layer, never inside a
+   scroller, so it costs nothing per frame. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Chrome ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0.7rem max(1rem, env(safe-area-inset-right)) 0.7rem max(1rem, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.badge {
+@media (min-width: 600px) {
+  .topbar-inner { padding-block: 0.85rem; }
+}
+
+.brand { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+
+.brand-mark {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.brand-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.brand-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line-strong);
+}
+
+/* The tagline is the first thing to go -- on a phone the bar exists to carry
+   the connection state, not to introduce the product. */
+.brand-sep, .brand-sub { display: none; }
+
+@media (min-width: 480px) {
+  .brand-sep { display: block; }
+  .brand-sub {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: none;
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--stale-bg);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem 0.28rem 0.6rem;
+  transition: color 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+
+.conn[data-state="live"] { color: var(--ok); background: var(--ok-bg); }
+.conn[data-state="error"] { color: var(--low); background: var(--low-bg); }
+
+/* The pulse is what tells you the socket is open without reading the word. */
+.conn[data-state="live"] .conn-dot { animation: breathe 2.4s var(--ease) infinite; }
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.72); }
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding:
+    1.5rem
+    max(1rem, env(safe-area-inset-right))
+    calc(2.5rem + env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+@media (min-width: 600px) {
+  .shell { padding-top: 2.5rem; padding-inline: 1.5rem; }
+}
+
+@media (min-width: 900px) {
+  .shell { padding-top: 3.5rem; padding-bottom: 4rem; }
+}
+
+/* ---------- Reveal ---------- */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.eyebrow, .hero-readout, .hero-vessel, .hero-lines, .panel {
+  animation: rise 0.7s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* ---------- Hero ---------- */
+
+/* No card. The bowl sits directly on the page ground -- it is the subject,
+   and a frame around the subject only competes with the tiles below, which
+   genuinely need edges to read as separate figures.
+   The bowl leads and the percentage sits under it: the drawing is what you
+   read at a glance, the number confirms it. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 600px) {
+  .hero { padding-bottom: 2.25rem; margin-bottom: 1rem; }
+}
+
+@media (min-width: 900px) {
+  .hero { padding: 1rem 0 3rem; margin-bottom: 1.1rem; }
+}
+
+/* Clustered rather than pushed to the page edges: without a card there are no
+   corners to anchor to, and a badge stranded 1100px from its timestamp stops
+   reading as one status. */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.25rem 0.6rem;
+  padding: 0.24rem 0.62rem;
   border-radius: 999px;
   background: var(--stale-bg);
   color: var(--stale);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.4s var(--ease), color 0.4s var(--ease);
 }
 
 #card[data-state="OK"] .badge { background: var(--ok-bg); color: var(--ok); }
@@ -105,10 +398,102 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 
 .updated { font-size: 0.8rem; color: var(--muted); }
 
+.pct-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.pct {
+  font-family: var(--mono);
+  font-size: clamp(3.5rem, 19vw, 5rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.pct-sign {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.03em;
+}
+
+@media (min-width: 900px) {
+  .pct { font-size: 5.5rem; }
+  .pct-sign { font-size: 1.7rem; }
+}
+
+/* Nothing has landed from Firestore yet -- shimmer the readout rather than
+   presenting placeholder dashes as though they were a value. Gated on
+   data-ready (set by pro-ui.js on the first snapshot) rather than on the
+   state alone: a *stale* reading is also "unknown", and shimmering a real
+   number would read as still-loading when it is merely old. */
+#card:not([data-ready]) .pct,
+#card:not([data-ready]) .pct-sign {
+  color: transparent;
+  background: linear-gradient(100deg,
+    var(--stale-bg) 20%, var(--line-strong) 40%, var(--stale-bg) 60%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 1.9s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 140% 0; }
+  to { background-position: -60% 0; }
+}
+
+/* Kept in the DOM for app.js to write into, never shown. Belt and braces:
+   some resets clobber the [hidden] default. */
+.grams, .grams[hidden] { display: none; }
+
+/* No rule above it -- with the card gone there is nothing to divide, and a
+   lone hairline floating on the page ground reads as a leftover. Spacing
+   does the separating instead. */
+.hero-lines {
+  align-self: stretch;
+  margin-top: 1rem;
+}
+
+/* Centred, so the prose needs a middle rather than a left edge. */
+.hero-lines .hint { margin-inline: auto; }
+
+@media (min-width: 900px) {
+  .hero-lines { margin-top: 1.25rem; }
+}
+
+.last-refill { font-size: 0.95rem; font-weight: 500; margin: 0; }
+
+.hint {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0.55rem 0 0;
+  max-width: 62ch;
+}
+
+.hint.empty { margin-top: 0.9rem; }
+
+#card[data-state="LOW"] #hint { color: var(--low); }
+
+/* No frame of its own -- the hero card is already the frame. */
+.hero-vessel { position: relative; }
+
 /* ---------- Bowl ---------- */
 
-.bowl-wrap { display: flex; justify-content: center; margin: 0.5rem 0 0.25rem; }
-.bowl { width: min(300px, 78vw); height: auto; overflow: visible; }
+.bowl-wrap { display: flex; justify-content: center; }
+
+/* The subject of the page -- given the width, with the reading underneath. */
+.bowl { width: min(300px, 72vw); height: auto; overflow: visible; }
+
+@media (min-width: 900px) {
+  .bowl { width: 380px; }
+}
 
 .bowl-glass { fill: var(--glass-fill); }
 
@@ -136,8 +521,6 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 
 .bowl-shadow { fill: var(--text); opacity: 0.07; }
 
-/* Sits exactly on the waterline. Scaled from a unit ellipse so the transform
-   can animate; non-scaling-stroke keeps the outline an even width. */
 /* Fill only, no outline -- a stroked edge here draws a hard ring that detaches
    from the bowl, and doubles up against the rim when the bowl is full. */
 .water-surface {
@@ -148,7 +531,7 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   transition: transform 1.4s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-#card[data-state="LOW"] .water-surface { fill: #fca5a5; }
+#card[data-state="LOW"] .water-surface { fill: #e8a3b0; }
 #card[data-state="unknown"] .water-surface { fill: var(--stale); }
 
 /* The group JS moves up and down. The long transition is what makes the
@@ -164,25 +547,20 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 .wave-back { fill: var(--water-top); opacity: 0.45; }
 .wave-front { fill: var(--water-bot); opacity: 0.55; }
 
-#card[data-state="LOW"] .wave-back { fill: #fca5a5; }
+#card[data-state="LOW"] .wave-back { fill: #e8a3b0; }
 #card[data-state="LOW"] .wave-front { fill: var(--low); }
-#card[data-state="unknown"] .wave-back { fill: var(--stale); opacity: 0.3; }
-#card[data-state="unknown"] .wave-front { fill: var(--stale); opacity: 0.5; }
+#card[data-state="unknown"] .wave-back { fill: var(--stale); opacity: 0.28; }
+#card[data-state="unknown"] .wave-front { fill: var(--stale); opacity: 0.45; }
 
 /* Two waves drifting at different speeds and directions read as moving
    liquid; a single wave looks like a sliding sheet. */
 @keyframes waveDrift {
   from { transform: translateX(0); }
-  to   { transform: translateX(-120px); }
+  to { transform: translateX(-120px); }
 }
 
 .wave-front { animation: waveDrift 3.4s linear infinite; }
-.wave-back  { animation: waveDrift 5.2s linear infinite reverse; }
-
-@media (prefers-reduced-motion: reduce) {
-  .wave-front, .wave-back { animation: none; }
-  .water { transition-duration: 0.3s; }
-}
+.wave-back { animation: waveDrift 5.2s linear infinite reverse; }
 
 /* Bowl lifted off the scale: fade it to a ghost so it reads as "missing"
    rather than "empty". */
@@ -196,71 +574,176 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 #card[data-state="REMOVED"] .pct,
 #card[data-state="REMOVED"] .pct-sign { color: var(--muted); }
 
-/* ---------- Readout ---------- */
+/* ---------- Summary squares ---------- */
 
-.pct-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.15rem;
-}
-
-.pct {
-  font-size: 3.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.05;
-}
-
-.pct-sign { font-size: 1.4rem; font-weight: 700; color: var(--muted); }
-
-.grams {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin: 0.2rem 0 0;
-  font-variant-numeric: tabular-nums;
-  min-height: 1.3em;
-}
-
-.last-refill {
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text);
-  margin: 0.45rem 0 0;
-  font-weight: 600;
-}
-
-.hint { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; text-align: center; }
-
-.event-list { list-style: none; margin: 0; padding: 0; }
-
-.event-row {
-  display: flex;
-  align-items: baseline;
+/* Four across at every width above a phone. On a phone four squares would be
+   80px each -- a number in a stamp -- so they go 2x2 and stay square. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 0.88rem;
+  margin-bottom: 0.75rem;
 }
 
-.event-row:last-child { border-bottom: none; }
+@media (min-width: 600px) {
+  .summary { grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+}
 
-.event-when { flex: 1; }
-.event-ago { color: var(--muted); font-size: 0.8rem; }
+@media (min-width: 900px) {
+  .summary { gap: 1.1rem; margin-bottom: 1.1rem; }
+}
 
-.event-amt {
+.tile {
+  position: relative;
+  /* A true square, not a card that happens to look square at one width. */
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--lift);
+  padding: 1rem;
+  overflow: hidden;
+  animation: rise 0.7s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  transition: box-shadow 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+@media (min-width: 600px) {
+  .tile { border-radius: var(--r-lg); padding: 1.25rem; }
+}
+
+@media (min-width: 900px) {
+  .tile { padding: 1.5rem; }
+}
+
+@media (hover: hover) {
+  .tile:hover { box-shadow: var(--lift-hover); transform: translateY(-2px); }
+}
+
+.tile-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Sized to survive the longest string each tile can hold ("12 min ago"),
+   which is what sets the ceiling here rather than the numbers. */
+.tile-value {
+  font-family: var(--mono);
+  font-size: clamp(1.35rem, 5.5vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  text-wrap: balance;
 }
 
-/* Water added by a human vs water taken by the dog -- different directions,
-   so different colours. */
-.event-amt.refill { color: var(--ok); }
-.event-amt.drink { color: var(--accent); }
+.tile-unit {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 0.15rem;
+  letter-spacing: 0;
+}
 
-/* ---------- Today's drinking ---------- */
+.tile-sub {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The projection tile is the only one that can ask for action, so it is the
+   only one allowed to change colour. */
+#sumDryTile[data-state="soon"] .tile-value { color: var(--low); }
+#sumDryTile[data-state="now"] {
+  background: var(--low-bg);
+  border-color: color-mix(in srgb, var(--low) 35%, transparent);
+}
+#sumDryTile[data-state="now"] .tile-value,
+#sumDryTile[data-state="now"] .tile-label { color: var(--low); }
+
+/* ---------- Bento ---------- */
+
+.bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+/* Tablet: pair the panels that read together, keep the wide charts full. */
+@media (min-width: 600px) {
+  .bento { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .span-7, .span-8 { grid-column: 1 / -1; }
+}
+
+@media (min-width: 900px) {
+  .bento { grid-template-columns: repeat(12, 1fr); gap: 1.1rem; }
+  .span-4 { grid-column: span 4; }
+  .span-5 { grid-column: span 5; }
+  .span-7 { grid-column: span 7; }
+  .span-8 { grid-column: span 8; }
+}
+
+.panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--lift);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+@media (min-width: 600px) {
+  .panel { border-radius: var(--r-lg); padding: 1.5rem; }
+}
+
+@media (min-width: 900px) {
+  .panel { padding: 2rem; }
+}
+
+/* Cursor-tracked spotlight on the border. --mx/--my are written by pro-ui.js;
+   with no pointer they simply never resolve and the layer stays hidden. */
+.panel::after, .tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%),
+              var(--accent-soft), transparent 68%);
+}
+
+@media (hover: hover) {
+  .panel:hover { box-shadow: var(--lift-hover); transform: translateY(-2px); }
+  .panel:hover::after, .tile:hover::after { opacity: 1; }
+}
+
+.panel-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
+@media (min-width: 900px) {
+  .panel-title { font-size: 0.72rem; margin-bottom: 1.35rem; }
+}
+
+/* ---------- Today ---------- */
 
 .today-top {
   display: flex;
@@ -273,21 +756,23 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 .today-figure { display: flex; align-items: baseline; gap: 0.2rem; }
 
 .today-ml {
-  font-size: 2.4rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--mono);
+  font-size: 2.9rem;
+  font-weight: 500;
+  letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1;
 }
 
-.today-unit { font-size: 1rem; font-weight: 700; color: var(--muted); }
+.today-unit { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
 
 .today-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The band marks the healthy daily range; the fill is today's total, so the
@@ -296,9 +781,13 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   position: relative;
   height: 12px;
   border-radius: 999px;
-  background: var(--stale-bg);
+  background: var(--bg-sunk);
   overflow: hidden;
-  margin: 0.9rem 0 0.2rem;
+  margin: 1.2rem 0 0;
+}
+
+@media (min-width: 900px) {
+  .range-bar { height: 10px; margin-top: 1.4rem; }
 }
 
 .range-band {
@@ -306,7 +795,7 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   top: 0;
   bottom: 0;
   background: var(--ok);
-  opacity: 0.22;
+  opacity: 0.2;
 }
 
 .range-fill {
@@ -316,7 +805,8 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   left: 0;
   border-radius: 999px;
   background: var(--accent);
-  transition: width 0.8s cubic-bezier(0.33, 1, 0.68, 1), background 0.3s ease;
+  /* Width is owned by stats.js; a 10px bar makes the layout cost negligible. */
+  transition: width 1s var(--ease), background 0.4s var(--ease);
 }
 
 .range-fill[data-state="in"] { background: var(--ok); }
@@ -324,109 +814,328 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 
 /* ---------- Charts ---------- */
 
-.hourly { height: 150px; }
+/* height:auto lets the viewBox set the ratio, so a narrow phone gets a
+   proportionally shorter chart instead of a fixed 150px box with the drawing
+   letterboxed into a strip in the middle of it. */
+.chart { width: 100%; height: auto; display: block; }
 
-.hbar { fill: var(--accent); opacity: 0.85; }
-.dbar { fill: var(--accent); }
+@media (min-width: 900px) {
+  .hourly { height: 150px; }
+  .daily { height: 190px; }
+}
+
+/* This one carries preserveAspectRatio="none" and is stretched to whatever
+   box it is given, so it needs a real height at every width. */
+.level { height: 120px; }
+
+@media (min-width: 600px) { .level { height: 160px; } }
+
+.hbar, .dbar { fill: var(--accent); }
+.hbar { opacity: 0.85; }
+
 /* Today is still filling up, so it shouldn't look like a completed short day. */
-.dbar.partial { fill: var(--accent); opacity: 0.4; }
-.band { fill: var(--ok); opacity: 0.15; }
-.axis { fill: var(--muted); font-size: 11px; }
+.dbar.partial { opacity: 0.38; }
+
+.band { fill: var(--ok); opacity: 0.13; }
+
+/* Sized in viewBox units, so the rendered size depends on how far the 600-unit
+   chart has been scaled down. On a phone that factor is around 0.55, and the
+   desktop 10px would land at six physical pixels. */
+.axis {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 600px) { .axis { font-size: 13px; } }
+@media (min-width: 900px) { .axis { font-size: 10px; } }
+
+/* Bars grow out of the baseline. The charts re-render on every snapshot, so
+   this replays whenever fresh data lands -- which is the point. */
+@keyframes barIn {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.hbar, .dbar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: barIn 0.55s var(--ease) both;
+}
+
+/* Staggered so the row draws left to right instead of snapping into place. */
+.hbar:nth-child(1), .dbar:nth-child(1) { animation-delay: 0ms; }
+.hbar:nth-child(2), .dbar:nth-child(2) { animation-delay: 22ms; }
+.hbar:nth-child(3), .dbar:nth-child(3) { animation-delay: 44ms; }
+.hbar:nth-child(4), .dbar:nth-child(4) { animation-delay: 66ms; }
+.hbar:nth-child(5), .dbar:nth-child(5) { animation-delay: 88ms; }
+.hbar:nth-child(6), .dbar:nth-child(6) { animation-delay: 110ms; }
+.hbar:nth-child(7), .dbar:nth-child(7) { animation-delay: 132ms; }
+.hbar:nth-child(8), .dbar:nth-child(8) { animation-delay: 154ms; }
+.hbar:nth-child(9), .dbar:nth-child(9) { animation-delay: 176ms; }
+.hbar:nth-child(10), .dbar:nth-child(10) { animation-delay: 198ms; }
+.hbar:nth-child(11), .dbar:nth-child(11) { animation-delay: 220ms; }
+.hbar:nth-child(12), .dbar:nth-child(12) { animation-delay: 242ms; }
+.hbar:nth-child(n+13), .dbar:nth-child(n+13) { animation-delay: 264ms; }
+
+.chart .line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart .area { fill: var(--accent); opacity: 0.1; }
+
+.chart .thresh {
+  stroke: var(--low);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.65;
+}
 
 /* ---------- Heatmap ---------- */
 
+/* 24 cells across a phone leaves each one about 8px wide, so the label column
+   and the inter-cell gaps are trimmed to buy the grid back its width. */
 .heatmap { display: flex; flex-direction: column; gap: 3px; }
 
-.heat-row { display: flex; align-items: center; gap: 0.5rem; }
+.heat-row { display: flex; align-items: center; gap: 0.45rem; }
 
 .heat-label {
-  width: 2.4rem;
+  width: 1.9rem;
   flex: none;
-  font-size: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
   color: var(--muted);
 }
 
-.heat-cells { display: flex; gap: 2px; flex: 1; }
+.heat-cells { display: flex; gap: 1.5px; flex: 1; min-width: 0; }
 
 .heat-cell {
   flex: 1;
-  height: 16px;
+  min-width: 0;
+  height: 20px;
   border-radius: 2px;
   background: var(--accent);
   /* --i is set per cell from the hour's share of the week's peak. */
-  opacity: calc(0.06 + var(--i) * 0.94);
+  opacity: calc(0.05 + var(--i) * 0.95);
+  transition: transform 0.25s var(--ease);
+}
+
+@media (min-width: 600px) {
+  .heatmap { gap: 4px; }
+  .heat-row { gap: 0.7rem; }
+  .heat-label { width: 2.4rem; font-size: 0.7rem; }
+  .heat-cells { gap: 3px; }
+  .heat-cell { height: 18px; border-radius: 3px; }
+}
+
+@media (hover: hover) {
+  .heat-cell:hover { transform: scaleY(1.25); }
 }
 
 /* ---------- Health ---------- */
 
+.health-body { flex: 1; }
+
 .health-headline {
   font-size: 1.05rem;
-  font-weight: 700;
-  margin: 0 0 0.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.4rem;
 }
 
 .health-headline[data-state="ok"] { color: var(--ok); }
 .health-headline[data-state="warn"] { color: var(--low); }
 
-.health-detail { font-size: 0.88rem; margin: 0 0 0.9rem; color: var(--text); }
+.health-detail {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-2);
+  margin: 0 0 1.25rem;
+  max-width: 62ch;
+}
 
+/* Hairlines instead of four nested boxes -- the figures already group
+   themselves; boxing them adds edges without adding meaning. */
 .health-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.6rem;
-  margin: 0 0 0.9rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  margin: 0 0 1.25rem;
+  border-top: 1px solid var(--line);
 }
 
 .health-stats div {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.5rem 0.65rem;
+  padding: 0.65rem 0.7rem 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.health-stats div:nth-child(odd) { border-right: 1px solid var(--line); }
+.health-stats div:nth-child(even) { padding-left: 0.7rem; }
+
+@media (min-width: 900px) {
+  .health-stats div { padding: 0.7rem 0.9rem 0.7rem 0; }
+  .health-stats div:nth-child(even) { padding-left: 0.9rem; }
 }
 
 .health-stats dt {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.07em;
 }
 
 .health-stats dd {
-  margin: 0.1rem 0 0;
-  font-weight: 700;
+  margin: 0.2rem 0 0;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 
 .disclaimer {
   font-size: 0.78rem;
+  line-height: 1.55;
   color: var(--muted);
-  border-left: 3px solid var(--line);
-  padding-left: 0.7rem;
-  margin: 0 0 0.9rem;
+  border-left: 2px solid var(--line-strong);
+  padding-left: 0.85rem;
+  margin: 0 0 1.25rem;
 }
 
+/* Full width and 48px tall on a phone: this is the one thing on the page you
+   actually press, and it should not need aiming. */
 .btn {
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  font: 500 0.85rem/1 var(--sans);
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 0.65rem 0.95rem;
   cursor: pointer;
+  touch-action: manipulation;
+  /* `translate` is animated separately from `transform` so the magnetic pull
+     (pro-ui.js) and the :active press can coexist on one element. */
+  transition: border-color 0.3s var(--ease), color 0.3s var(--ease),
+              background 0.3s var(--ease), transform 0.15s var(--ease),
+              translate 0.4s var(--ease);
 }
 
-.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
-.chart { width: 100%; height: 160px; display: block; }
-.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
-.chart .area { fill: var(--accent); opacity: 0.12; }
-.chart .thresh { stroke: var(--low); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
+@media (min-width: 600px) {
+  .btn { align-self: flex-start; justify-content: flex-start; min-height: 0; }
+}
+
+/* Guarded: on a touchscreen :hover latches on after the tap and the button
+   stays lit until you press something else. */
+@media (hover: hover) {
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+}
+
+/* Tactile: the control gives under the press. On touch this is the only
+   feedback there is, so it goes deeper than a pointer press would. */
+.btn:active {
+  transform: translateY(1px) scale(0.97);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Event lists ---------- */
+
+.event-list { list-style: none; margin: 0; padding: 0; }
+
+.event-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.87rem;
+  animation: rise 0.45s var(--ease) both;
+}
+
+.event-row:nth-child(1) { animation-delay: 0ms; }
+.event-row:nth-child(2) { animation-delay: 35ms; }
+.event-row:nth-child(3) { animation-delay: 70ms; }
+.event-row:nth-child(4) { animation-delay: 105ms; }
+.event-row:nth-child(n+5) { animation-delay: 140ms; }
+
+.event-row:last-child { border-bottom: none; }
+
+.event-when { flex: 1; }
+.event-ago { color: var(--muted); font-size: 0.76rem; }
+
+.event-amt {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Water added by a human vs water taken by the dog -- different directions,
+   so different colours. */
+.event-amt.refill { color: var(--ok); }
+.event-amt.drink { color: var(--accent); }
+
+/* ---------- Foot ---------- */
 
 .foot {
-  text-align: center;
-  font-size: 0.78rem;
+  margin-top: 1.75rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  line-height: 1.6;
   color: var(--muted);
-  margin-top: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 900px) {
+  .foot { margin-top: 2.5rem; padding-top: 1.25rem; font-size: 0.72rem; }
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  /* The wash keeps its colour, loses its drift. */
+  .wave-front, .wave-back,
+  .wash,
+  .conn[data-state="live"] .conn-dot {
+    animation: none;
+  }
+  /* Drop the shimmer entirely rather than freezing it -- a stopped
+     background-clip gradient would leave the digits invisible. */
+  #card:not([data-ready]) .pct,
+  #card:not([data-ready]) .pct-sign {
+    animation: none;
+    background: none;
+    color: var(--muted);
+  }
+  .eyebrow, .hero-readout, .hero-vessel, .hero-lines,
+  .tile, .panel, .event-row, .hbar, .dbar {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .water, .water-surface { transition-duration: 0.3s; }
+  .panel:hover, .tile:hover { transform: none; }
 }

@@ -1,156 +1,234 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dog Bowl Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+  <title>SmartBowl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="wrap">
-    <header class="head">
-      <h1>Water Bowl</h1>
-      <span id="conn" class="conn" data-state="connecting">connecting...</span>
-    </header>
+  <!-- Both layers are fixed and pointer-transparent: inside a scrolling
+       container they would repaint on every frame of scroll. The wash sits
+       behind the content, the grain over it. -->
+  <div class="aurora" aria-hidden="true">
+    <span class="wash wash-1"></span>
+    <span class="wash wash-2"></span>
+    <span class="wash wash-3"></span>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
 
-    <section class="card" id="card" data-state="unknown">
-      <div class="status-row">
-        <span id="badge" class="badge">--</span>
-        <span id="updated" class="updated">waiting for data...</span>
-      </div>
-
-      <div class="bowl-wrap">
-        <!-- Near eye-level view: the rim reads as a shallow ellipse and the
-             bowl shows its profile -- wide flared lip tapering to a small
-             base. Transparent, so the water level is directly visible. -->
-        <svg class="bowl" viewBox="0 0 240 142" role="img" aria-labelledby="bowlTitle">
-          <title id="bowlTitle">Water level in the bowl</title>
-
-          <defs>
-            <!-- The vessel's interior volume: water is clipped to this, so it
-                 hugs the tapering walls the way real water would. -->
-            <clipPath id="vessel">
-              <path d="M 24 36 A 96 8 0 0 1 216 36
-                       C 210 74 194 105 170 116
-                       A 50 5 0 0 1 70 116
-                       C 46 105 30 74 24 36 Z"/>
-            </clipPath>
-          </defs>
-
-          <ellipse class="bowl-shadow" cx="120" cy="126" rx="64" ry="5"/>
-
-          <path class="bowl-glass"
-                d="M 16 34 A 104 10 0 0 1 224 34
-                   C 218 74 200 106 174 118
-                   A 54 6 0 0 1 66 118
-                   C 40 106 22 74 16 34 Z"/>
-
-          <g clip-path="url(#vessel)">
-            <!-- JS moves this group vertically; the waves inside drift
-                 sideways on their own via CSS. -->
-            <g id="water" class="water">
-              <path class="wave wave-back"
-                    d="M -140 2 q 30 -3 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 L 400 220 L -140 220 Z"/>
-              <path class="wave wave-front"
-                    d="M -140 0 q 30 -4 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 L 400 220 L -140 220 Z"/>
-            </g>
-          </g>
-
-          <!-- A unit ellipse that JS translates and scales to sit exactly on
-               the waterline, shrinking as the level drops into the taper. -->
-          <ellipse id="surface" class="water-surface"
-                   cx="0" cy="0" rx="1" ry="1" vector-effect="non-scaling-stroke"/>
-
-          <!-- Glass drawn last so its edges sit over the water. -->
-          <ellipse class="bowl-base" cx="120" cy="118" rx="54" ry="6"/>
-          <path class="bowl-wall"
-                d="M 16 34 C 22 74 40 106 66 118
-                   A 54 6 0 0 0 174 118
-                   C 200 106 218 74 224 34"/>
-          <!-- Two ellipses make the rolled lip of a real dog bowl. -->
-          <ellipse class="bowl-rim" cx="120" cy="34" rx="104" ry="10"/>
-          <ellipse class="bowl-rim-inner" cx="120" cy="36" rx="96" ry="8"/>
-          <path class="bowl-shine" d="M 42 48 C 48 76 60 98 76 110"/>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3.2c3.4 3.9 5.4 6.8 5.4 9.3a5.4 5.4 0 0 1-10.8 0c0-2.5 2-5.4 5.4-9.3Z"/>
         </svg>
+        <span class="brand-name">SmartBowl</span>
+        <span class="brand-sep" aria-hidden="true"></span>
+        <span class="brand-sub">water telemetry</span>
+      </div>
+      <span id="conn" class="conn" data-state="connecting">
+        <span class="conn-dot" aria-hidden="true"></span>connecting
+      </span>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <!-- Split hero: readout left, vessel right. A centred stack of numbers
+         reads like a template; the asymmetry gives the level room to breathe. -->
+    <section class="hero" id="card" data-state="unknown">
+      <div class="eyebrow" style="--i:0">
+        <span id="badge" class="badge">--</span>
+        <span id="updated" class="updated">waiting for data</span>
       </div>
 
-      <div class="pct-row">
-        <span id="pct" class="pct">--</span><span class="pct-sign">%</span>
-      </div>
-      <p id="grams" class="grams">waiting for a reading</p>
-      <p id="lastRefill" class="last-refill"></p>
-      <p id="hint" class="hint"></p>
-    </section>
+      <div class="hero-vessel" style="--i:1">
+        <div class="bowl-wrap">
+          <!-- Near eye-level view: the rim reads as a shallow ellipse and the
+               bowl shows its profile -- wide flared lip tapering to a small
+               base. Transparent, so the water level is directly visible. -->
+          <svg class="bowl" viewBox="0 0 240 142" role="img" aria-labelledby="bowlTitle">
+            <title id="bowlTitle">Water level in the bowl</title>
 
-    <section class="card">
-      <h2>Today's drinking</h2>
-      <div class="today-top">
-        <div class="today-figure">
-          <span id="todayMl" class="today-ml">--</span><span class="today-unit">ml</span>
+            <defs>
+              <!-- The vessel's interior volume: water is clipped to this, so it
+                   hugs the tapering walls the way real water would. -->
+              <clipPath id="vessel">
+                <path d="M 24 36 A 96 8 0 0 1 216 36
+                         C 210 74 194 105 170 116
+                         A 50 5 0 0 1 70 116
+                         C 46 105 30 74 24 36 Z"/>
+              </clipPath>
+            </defs>
+
+            <ellipse class="bowl-shadow" cx="120" cy="126" rx="64" ry="5"/>
+
+            <path class="bowl-glass"
+                  d="M 16 34 A 104 10 0 0 1 224 34
+                     C 218 74 200 106 174 118
+                     A 54 6 0 0 1 66 118
+                     C 40 106 22 74 16 34 Z"/>
+
+            <g clip-path="url(#vessel)">
+              <!-- JS moves this group vertically; the waves inside drift
+                   sideways on their own via CSS. -->
+              <g id="water" class="water">
+                <path class="wave wave-back"
+                      d="M -140 2 q 30 -3 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 L 400 220 L -140 220 Z"/>
+                <path class="wave wave-front"
+                      d="M -140 0 q 30 -4 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 t 60 0 L 400 220 L -140 220 Z"/>
+              </g>
+            </g>
+
+            <!-- A unit ellipse that JS translates and scales to sit exactly on
+                 the waterline, shrinking as the level drops into the taper. -->
+            <ellipse id="surface" class="water-surface"
+                     cx="0" cy="0" rx="1" ry="1" vector-effect="non-scaling-stroke"/>
+
+            <!-- Glass drawn last so its edges sit over the water. -->
+            <ellipse class="bowl-base" cx="120" cy="118" rx="54" ry="6"/>
+            <path class="bowl-wall"
+                  d="M 16 34 C 22 74 40 106 66 118
+                     A 54 6 0 0 0 174 118
+                     C 200 106 218 74 224 34"/>
+            <!-- Two ellipses make the rolled lip of a real dog bowl. -->
+            <ellipse class="bowl-rim" cx="120" cy="34" rx="104" ry="10"/>
+            <ellipse class="bowl-rim-inner" cx="120" cy="36" rx="96" ry="8"/>
+            <path class="bowl-shine" d="M 42 48 C 48 76 60 98 76 110"/>
+          </svg>
         </div>
-        <div class="today-meta">
-          <span id="todaySessions">--</span>
-          <span id="lastDrink">--</span>
+      </div>
+
+      <div class="hero-readout" style="--i:2">
+        <div class="pct-row">
+          <span id="pct" class="pct">--</span><span class="pct-sign">%</span>
         </div>
+        <!-- app.js writes the gram figure here on every render, so the node
+             has to exist -- removing it would throw and stop the live update.
+             Hidden rather than deleted: the percentage is the reading people
+             actually read, and the same fact twice is noise. -->
+        <p id="grams" class="grams" hidden></p>
       </div>
-      <div class="range-bar">
-        <div id="rangeBand" class="range-band"></div>
-        <div id="rangeFill" class="range-fill"></div>
+
+      <div class="hero-lines" style="--i:3">
+        <p id="lastRefill" class="last-refill"></p>
+        <p id="hint" class="hint"></p>
       </div>
-      <p id="rangeNote" class="hint"></p>
     </section>
 
-    <section class="card">
-      <h2>When your dog drinks today</h2>
-      <svg id="hourlyChart" class="chart hourly" viewBox="0 0 600 150"
-           role="img" aria-label="Water drunk by hour of day"></svg>
-      <p id="hourlyNote" class="hint"></p>
+    <!-- Four equal squares lifting the headline figure out of each panel
+         below, so the answer to "does the bowl need me" is readable without
+         scrolling into the detail. -->
+    <section class="summary" aria-label="At a glance">
+      <article class="tile" style="--i:0">
+        <span class="tile-label">Last drink</span>
+        <span class="tile-value" id="sumDrinkValue">--</span>
+        <span class="tile-sub" id="sumDrinkSub">no drinks yet</span>
+      </article>
+
+      <article class="tile" style="--i:1">
+        <span class="tile-label">Last refill</span>
+        <span class="tile-value" id="sumRefillValue">--</span>
+        <span class="tile-sub" id="sumRefillSub">no refills yet</span>
+      </article>
+
+      <article class="tile" style="--i:2">
+        <span class="tile-label">Today</span>
+        <span class="tile-value" id="sumTodayValue">--<span class="tile-unit">ml</span></span>
+        <span class="tile-sub" id="sumTodaySub">no drinks yet</span>
+      </article>
+
+      <article class="tile" id="sumDryTile" style="--i:3">
+        <span class="tile-label">Runs dry in</span>
+        <span class="tile-value" id="sumDryValue">--</span>
+        <span class="tile-sub" id="sumDrySub">needs a few days of data</span>
+      </article>
     </section>
 
-    <section class="card">
-      <h2>Weekly pattern</h2>
-      <div id="heatmap" class="heatmap"></div>
-      <p id="heatNote" class="hint">Darker means more water drunk in that hour.</p>
-    </section>
+    <div class="bento">
 
-    <section class="card">
-      <h2>Daily intake</h2>
-      <svg id="dailyChart" class="chart" viewBox="0 0 600 190"
-           role="img" aria-label="Daily water intake history"></svg>
-      <p id="trendNote" class="hint"></p>
-    </section>
+      <section class="panel span-5" style="--i:2">
+        <h2 class="panel-title">Today's drinking</h2>
+        <div class="today-top">
+          <div class="today-figure">
+            <span id="todayMl" class="today-ml">--</span><span class="today-unit">ml</span>
+          </div>
+          <div class="today-meta">
+            <span id="todaySessions">--</span>
+            <span id="lastDrink">--</span>
+          </div>
+        </div>
+        <div class="range-bar">
+          <div id="rangeBand" class="range-band"></div>
+          <div id="rangeFill" class="range-fill"></div>
+        </div>
+        <p id="rangeNote" class="hint"></p>
+      </section>
 
-    <section class="card" id="healthCard">
-      <h2>Health check</h2>
-      <div id="healthBody" class="health-body">
-        <p class="hint">Building a baseline. This needs about a week of data.</p>
-      </div>
-      <p class="disclaimer">
-        This is a trend from a water bowl, not a medical test. Changes in
-        drinking can have ordinary causes (heat, exercise, a change of food).
-        It is only worth raising with your vet if a change persists.
-      </p>
-      <button id="exportCsv" class="btn" type="button">Download data for your vet</button>
-    </section>
+      <section class="panel span-7" style="--i:3">
+        <h2 class="panel-title">Drinking by hour</h2>
+        <svg id="hourlyChart" class="chart hourly" viewBox="0 0 600 150"
+             role="img" aria-label="Water drunk by hour of day"></svg>
+        <p id="hourlyNote" class="hint"></p>
+      </section>
 
-    <section class="card">
-      <h2>Recent drinks</h2>
-      <ul id="drinkList" class="event-list"></ul>
-      <p id="drinkEmpty" class="hint">No drinks recorded yet.</p>
-    </section>
+      <section class="panel span-7" style="--i:4">
+        <h2 class="panel-title">Weekly pattern</h2>
+        <div id="heatmap" class="heatmap"></div>
+        <p id="heatNote" class="hint">Darker means more water drunk in that hour.</p>
+      </section>
 
-    <section class="card">
-      <h2>Recent refills</h2>
-      <ul id="refillList" class="event-list"></ul>
-      <p id="refillEmpty" class="hint">No refills recorded yet.</p>
-    </section>
+      <section class="panel span-5" id="healthCard" style="--i:5">
+        <h2 class="panel-title">Health check</h2>
+        <div id="healthBody" class="health-body">
+          <p class="hint">Building a baseline. This needs about a week of data.</p>
+        </div>
+        <p class="disclaimer">
+          This is a trend from a water bowl, not a medical test. Changes in
+          drinking can have ordinary causes (heat, exercise, a change of food).
+          It is only worth raising with your vet if a change persists.
+        </p>
+        <button id="exportCsv" class="btn" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/>
+          </svg>
+          Download data for your vet
+        </button>
+      </section>
 
-    <section class="card">
-      <h2>Recent history</h2>
-      <svg id="chart" class="chart" viewBox="0 0 600 160" preserveAspectRatio="none"
-           role="img" aria-label="Recent water level readings"></svg>
-      <p id="chartEmpty" class="hint">No readings logged yet.</p>
-    </section>
+      <section class="panel span-8" style="--i:6">
+        <h2 class="panel-title">Daily intake</h2>
+        <svg id="dailyChart" class="chart daily" viewBox="0 0 600 190"
+             role="img" aria-label="Daily water intake history"></svg>
+        <p id="trendNote" class="hint"></p>
+      </section>
+
+      <section class="panel span-4" style="--i:7">
+        <h2 class="panel-title">Recent drinks</h2>
+        <ul id="drinkList" class="event-list"></ul>
+        <p id="drinkEmpty" class="hint empty">No drinks recorded yet.</p>
+      </section>
+
+      <section class="panel span-4" style="--i:8">
+        <h2 class="panel-title">Recent refills</h2>
+        <ul id="refillList" class="event-list"></ul>
+        <p id="refillEmpty" class="hint empty">No refills recorded yet.</p>
+      </section>
+
+      <section class="panel span-8" style="--i:9">
+        <h2 class="panel-title">Recent history</h2>
+        <svg id="chart" class="chart level" viewBox="0 0 600 160" preserveAspectRatio="none"
+             role="img" aria-label="Recent water level readings"></svg>
+        <p id="chartEmpty" class="hint empty">No readings logged yet.</p>
+      </section>
+
+    </div>
 
     <footer class="foot">
       <span id="thresholds"></span>
@@ -159,5 +237,7 @@
 
   <script type="module" src="app.js"></script>
   <script type="module" src="stats.js"></script>
+  <script type="module" src="summary.js"></script>
+  <script src="ui.js" defer></script>
 </body>
 </html>

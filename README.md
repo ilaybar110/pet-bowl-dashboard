@@ -13,9 +13,18 @@ history. When the bowl runs low the ESP32 also sends a push notification via
 | File | Purpose |
 |---|---|
 | `index.html` | Page structure |
-| `app.js` | Firestore realtime subscription + chart rendering |
+| `app.js` | Live bowl: level, state, refills, recent history |
+| `stats.js` | Drinking analytics: today, patterns, daily trend, health |
+| `summary.js` | The four glance tiles, including the dry-out projection |
+| `shared.js` | Firebase handle and time formatting, shared by the above |
+| `ui.js` | Presentation only -- reveal, spotlight, magnetic button |
 | `style.css` | Styling, light/dark aware |
 | `firebase-config.js` | Firebase project identifiers |
+
+Every Firestore query in `summary.js` is byte-identical to one `app.js` or
+`stats.js` already opens. The SDK shares a single stream per distinct query
+per client, so the tiles cost no extra reads -- changing a `limit()` in one
+place without the other quietly doubles them.
 
 ## About the Firebase config
 
