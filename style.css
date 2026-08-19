@@ -11,6 +11,14 @@
   --stale: #6b7280;
   --stale-bg: #e5e7eb;
   --accent: #2563eb;
+
+  --water-top: #7dd3fc;
+  --water-bot: #0284c7;
+
+  --glass-fill: rgba(120, 150, 180, 0.10);
+  --glass-edge: rgba(90, 115, 145, 0.55);
+  --glass-soft: rgba(90, 115, 145, 0.28);
+  --glass-shine: rgba(255, 255, 255, 0.85);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +35,14 @@
     --stale: #9aa3ad;
     --stale-bg: #2c3238;
     --accent: #60a5fa;
+
+    --water-top: #38bdf8;
+    --water-bot: #0369a1;
+
+    --glass-fill: rgba(180, 205, 230, 0.07);
+    --glass-edge: rgba(190, 210, 235, 0.45);
+    --glass-soft: rgba(190, 210, 235, 0.20);
+    --glass-shine: rgba(255, 255, 255, 0.35);
   }
 }
 
@@ -70,7 +86,6 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.5rem;
 }
 
 .badge {
@@ -82,6 +97,7 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
   border-radius: 999px;
   background: var(--stale-bg);
   color: var(--stale);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #card[data-state="OK"] .badge { background: var(--ok-bg); color: var(--ok); }
@@ -89,48 +105,156 @@ h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 
 
 .updated { font-size: 0.8rem; color: var(--muted); }
 
-.reading { display: flex; align-items: baseline; gap: 0.35rem; }
+/* ---------- Bowl ---------- */
 
-.weight {
-  font-size: 3.25rem;
+.bowl-wrap { display: flex; justify-content: center; margin: 0.5rem 0 0.25rem; }
+.bowl { width: min(300px, 78vw); height: auto; overflow: visible; }
+
+.bowl-glass { fill: var(--glass-fill); }
+
+.bowl-wall, .bowl-rim, .bowl-rim-inner, .bowl-base {
+  fill: none;
+  stroke: var(--glass-edge);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* The inner edge of the rolled lip sits deeper, so it reads softer. */
+.bowl-rim-inner { stroke: var(--glass-soft); stroke-width: 1.5; }
+
+/* The far half of the base shows through the glass, so it should read as
+   fainter than the near edges rather than equally solid. */
+.bowl-base { stroke: var(--glass-soft); stroke-width: 1.5; }
+
+.bowl-shine {
+  fill: none;
+  stroke: var(--glass-shine);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.bowl-shadow { fill: var(--text); opacity: 0.07; }
+
+/* Sits exactly on the waterline. Scaled from a unit ellipse so the transform
+   can animate; non-scaling-stroke keeps the outline an even width. */
+/* Fill only, no outline -- a stroked edge here draws a hard ring that detaches
+   from the bowl, and doubles up against the rim when the bowl is full. */
+.water-surface {
+  fill: var(--water-top);
+  fill-opacity: 0.3;
+  stroke: none;
+  transform: translate(120px, 116px) scale(50, 5); /* empty; JS overrides */
+  transition: transform 1.4s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+#card[data-state="LOW"] .water-surface { fill: #fca5a5; }
+#card[data-state="unknown"] .water-surface { fill: var(--stale); }
+
+/* The group JS moves up and down. The long transition is what makes the
+   level glide rather than jump when a new reading lands. */
+.water {
+  transform: translateY(116px); /* starts empty (bowl floor); JS overrides */
+  transition: transform 1.4s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Kept translucent so the far wall stays visible through the water -- that
+   see-through depth is the whole point of the glass bowl. */
+.wave { transition: fill 0.4s ease; }
+.wave-back { fill: var(--water-top); opacity: 0.45; }
+.wave-front { fill: var(--water-bot); opacity: 0.55; }
+
+#card[data-state="LOW"] .wave-back { fill: #fca5a5; }
+#card[data-state="LOW"] .wave-front { fill: var(--low); }
+#card[data-state="unknown"] .wave-back { fill: var(--stale); opacity: 0.3; }
+#card[data-state="unknown"] .wave-front { fill: var(--stale); opacity: 0.5; }
+
+/* Two waves drifting at different speeds and directions read as moving
+   liquid; a single wave looks like a sliding sheet. */
+@keyframes waveDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-120px); }
+}
+
+.wave-front { animation: waveDrift 3.4s linear infinite; }
+.wave-back  { animation: waveDrift 5.2s linear infinite reverse; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-front, .wave-back { animation: none; }
+  .water { transition-duration: 0.3s; }
+}
+
+/* Bowl lifted off the scale: fade it to a ghost so it reads as "missing"
+   rather than "empty". */
+#card[data-state="REMOVED"] .bowl-wall,
+#card[data-state="REMOVED"] .bowl-rim,
+#card[data-state="REMOVED"] .bowl-base { stroke-dasharray: 6 5; opacity: 0.4; }
+#card[data-state="REMOVED"] .bowl-glass,
+#card[data-state="REMOVED"] .bowl-shine,
+#card[data-state="REMOVED"] .water-surface { opacity: 0; }
+#card[data-state="REMOVED"] .bowl-shadow { opacity: 0.02; }
+#card[data-state="REMOVED"] .pct,
+#card[data-state="REMOVED"] .pct-sign { color: var(--muted); }
+
+/* ---------- Readout ---------- */
+
+.pct-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.pct {
+  font-size: 3.5rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
-.unit { font-size: 1.1rem; color: var(--muted); font-weight: 600; }
+.pct-sign { font-size: 1.4rem; font-weight: 700; color: var(--muted); }
 
-.meter {
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--stale-bg);
-  overflow: hidden;
-  margin: 1rem 0 0.75rem;
+.grams {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.2rem 0 0;
+  font-variant-numeric: tabular-nums;
+  min-height: 1.3em;
 }
 
-.meter-fill {
-  height: 100%;
-  width: 0%;
-  border-radius: 999px;
-  background: var(--accent);
-  transition: width 0.4s ease, background 0.3s ease;
+.last-refill {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0.45rem 0 0;
+  font-weight: 600;
 }
 
-#card[data-state="OK"] .meter-fill { background: var(--ok); }
-#card[data-state="LOW"] .meter-fill { background: var(--low); }
+.hint { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; text-align: center; }
 
-.meter-mark {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--text);
-  opacity: 0.35;
+.refill-list { list-style: none; margin: 0; padding: 0; }
+
+.refill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.88rem;
 }
 
-.hint { font-size: 0.82rem; color: var(--muted); margin: 0.5rem 0 0; }
+.refill-row:last-child { border-bottom: none; }
+
+.refill-when { flex: 1; }
+.refill-ago { color: var(--muted); font-size: 0.8rem; }
+
+.refill-amt {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ok);
+}
 
 .chart { width: 100%; height: 160px; display: block; }
 .chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }

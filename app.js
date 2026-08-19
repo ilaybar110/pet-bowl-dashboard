@@ -8,14 +8,38 @@ import { firebaseConfig } from "./firebase-config.js";
 // longer trustworthy -- most likely the ESP32 lost WiFi or power.
 const STALE_AFTER_MS = 5 * 60 * 1000;
 
+// Bowl geometry in the SVG's viewBox units. The bowl tapers, so the water's
+// surface ellipse has to shrink as the level drops -- a fixed-size surface
+// would visibly overhang the walls when the bowl is nearly empty.
+const RIM = { y: 36, rx: 96, ry: 8 };
+const BASE = { y: 116, rx: 50, ry: 5 };
+const BOWL_CX = 120;
+
+function surfaceAt(pct) {
+  const y = BASE.y - (pct / 100) * (BASE.y - RIM.y);
+  const t = (y - RIM.y) / (BASE.y - RIM.y); // 0 at the rim, 1 at the base
+  return {
+    y,
+    rx: RIM.rx + t * (BASE.rx - RIM.rx),
+    ry: RIM.ry + t * (BASE.ry - RIM.ry),
+  };
+}
+
+// Used only until the device reports its own capacity.
+const FALLBACK_CAPACITY_G = 1049;
+
 const el = {
   conn: document.getElementById("conn"),
   card: document.getElementById("card"),
   badge: document.getElementById("badge"),
   updated: document.getElementById("updated"),
-  weight: document.getElementById("weight"),
-  meterFill: document.getElementById("meterFill"),
-  meterMark: document.getElementById("meterMark"),
+  water: document.getElementById("water"),
+  surface: document.getElementById("surface"),
+  pct: document.getElementById("pct"),
+  grams: document.getElementById("grams"),
+  lastRefill: document.getElementById("lastRefill"),
+  refillList: document.getElementById("refillList"),
+  refillEmpty: document.getElementById("refillEmpty"),
   hint: document.getElementById("hint"),
   chart: document.getElementById("chart"),
   chartEmpty: document.getElementById("chartEmpty"),
@@ -26,13 +50,12 @@ if (firebaseConfig.apiKey.startsWith("PASTE_")) {
   el.conn.textContent = "not configured";
   el.conn.dataset.state = "error";
   el.hint.textContent =
-    "Fill in your Firebase apiKey and projectId in web/firebase-config.js.";
+    "Fill in your Firebase apiKey and projectId in firebase-config.js.";
   throw new Error("firebase-config.js still has placeholder values");
 }
 
 const db = getFirestore(initializeApp(firebaseConfig));
 
-// Latest reading drives everything above the fold.
 let latest = null;
 
 function relativeTime(date) {
@@ -46,31 +69,80 @@ function relativeTime(date) {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+// Counting the number up/down matches the water's glide -- snapping the digits
+// while the level animates looks broken.
+let pctAnim = null;
+let shownPct = 0;
+
+function animatePct(to) {
+  if (pctAnim) cancelAnimationFrame(pctAnim);
+  const from = shownPct;
+  const delta = to - from;
+  if (Math.abs(delta) < 0.5) {
+    shownPct = to;
+    el.pct.textContent = Math.round(to);
+    return;
+  }
+  const start = performance.now();
+  const DURATION = 1400;
+
+  const step = (now) => {
+    const t = Math.min((now - start) / DURATION, 1);
+    // Same easing curve as the water transition in CSS.
+    const eased = 1 - Math.pow(1 - t, 3);
+    shownPct = from + delta * eased;
+    el.pct.textContent = Math.round(shownPct);
+    if (t < 1) pctAnim = requestAnimationFrame(step);
+  };
+  pctAnim = requestAnimationFrame(step);
+}
+
 function render() {
   if (!latest) return;
 
   const { weightG, state, updatedAt, lowThresholdG, refillThresholdG } = latest;
+  const capacity = latest.fullCapacityG || FALLBACK_CAPACITY_G;
   const when = updatedAt?.toDate ? updatedAt.toDate() : null;
   const stale = when ? Date.now() - when.getTime() > STALE_AFTER_MS : true;
 
-  el.weight.textContent = Math.round(weightG);
+  const pct = Math.max(0, Math.min(100, (weightG / capacity) * 100));
+  const removed = !stale && state === "REMOVED";
 
   // A stale reading gets neutral styling so an old "OK" can't look reassuring.
   el.card.dataset.state = stale ? "unknown" : state;
-  el.badge.textContent = stale ? "stale" : state;
+  el.badge.textContent = stale ? "stale" : removed ? "no bowl" : state;
   el.updated.textContent = when ? relativeTime(when) : "unknown";
+
+  // With the bowl off the scale there is no water level to show, so the
+  // percentage would be meaningless rather than merely zero.
+  const surf = surfaceAt(removed ? 0 : pct);
+  el.water.style.transform = `translateY(${surf.y}px)`;
+  el.surface.style.transform =
+    `translate(${BOWL_CX}px, ${surf.y}px) scale(${surf.rx}, ${surf.ry})`;
+
+  if (removed) {
+    if (pctAnim) cancelAnimationFrame(pctAnim);
+    shownPct = 0;
+    el.pct.textContent = "--";
+    el.grams.textContent = "";
+  } else {
+    animatePct(pct);
+    el.grams.textContent =
+      `${Math.max(0, Math.round(weightG))} g of ${Math.round(capacity)} g`;
+  }
+
+  const refilledAt = latest.lastRefillAt?.toDate ? latest.lastRefillAt.toDate() : null;
+  el.lastRefill.textContent = refilledAt
+    ? `Last refilled ${relativeTime(refilledAt)}`
+    : "No refill recorded yet";
 
   el.hint.textContent = stale
     ? "No update in a while -- check that the scale has power and WiFi."
-    : state === "LOW"
-      ? "Bowl needs a refill."
-      : "";
-
-  // The meter is scaled against the refill threshold, so a full bowl sits
-  // near the right edge and the marker shows where "low" begins.
-  const span = Math.max(refillThresholdG || 0, weightG, 1);
-  el.meterFill.style.width = `${Math.max(0, Math.min(100, (weightG / span) * 100))}%`;
-  el.meterMark.style.left = `${Math.min(100, ((lowThresholdG || 0) / span) * 100)}%`;
+    : removed
+      ? "Bowl not on SmartBowl"
+      : state === "LOW"
+        ? "Bowl needs a refill."
+        : "";
 
   el.thresholds.textContent =
     `alerts below ${Math.round(lowThresholdG || 0)}g / clears above ${Math.round(refillThresholdG || 0)}g`;
@@ -138,5 +210,36 @@ onSnapshot(
   () => { /* history is best-effort; the live reading above still works */ }
 );
 
-// Keep the "x min ago" label honest even when no new data arrives.
-setInterval(render, 15000);
+function renderRefills(rows) {
+  el.refillEmpty.hidden = rows.length > 0;
+  el.refillList.innerHTML = rows.map((r) => {
+    const when = r.at.toLocaleString([], {
+      weekday: "short", hour: "2-digit", minute: "2-digit",
+    });
+    return `<li class="refill-row">
+      <span class="refill-when">${when}</span>
+      <span class="refill-ago">${relativeTime(r.at)}</span>
+      <span class="refill-amt">+${Math.round(r.amountG)} g</span>
+    </li>`;
+  }).join("");
+}
+
+let refillRows = [];
+
+onSnapshot(
+  query(collection(db, "refills"), orderBy("at", "desc"), limit(10)),
+  (snap) => {
+    refillRows = snap.docs
+      .map((d) => d.data())
+      .filter((r) => r.at?.toDate)
+      .map((r) => ({ amountG: r.amountG || 0, at: r.at.toDate() }));
+    renderRefills(refillRows);
+  },
+  () => { /* best-effort, same as history */ }
+);
+
+// Keep the "x min ago" labels honest even when no new data arrives.
+setInterval(() => {
+  render();
+  renderRefills(refillRows);
+}, 15000);
