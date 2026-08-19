@@ -230,6 +230,45 @@
 
     </div>
 
+    <section class="card danger-card">
+      <h2>Reset history</h2>
+      <p class="muted">
+        Erase every drink, daily total, refill and reading — on the device and
+        in the cloud. The bowl's current weight and calibration are not
+        affected.
+      </p>
+      <button id="resetBtn" class="danger-btn" type="button">Reset history</button>
+    </section>
+
+    <dialog id="resetDialog" class="reset-dialog">
+      <h2>Erase all history?</h2>
+      <p>
+        This deletes every drink, daily total, refill and reading, and clears
+        the 14-day health baseline. The bowl's tare and current level are kept.
+      </p>
+      <p class="reset-warn">This cannot be undone.</p>
+
+      <label for="resetSecret">Reset secret</label>
+      <input id="resetSecret" type="password" autocomplete="off"
+             placeholder="the RESET_SECRET from secrets.h">
+      <label class="reset-remember">
+        <input id="resetRemember" type="checkbox"> Remember on this device
+      </label>
+
+      <p class="muted small">
+        A wrong secret is ignored silently — the device gives no feedback either
+        way, so nobody can probe for it. If nothing changes within a minute or
+        two, check the secret.
+      </p>
+
+      <p id="resetStatus" class="reset-status" role="status"></p>
+
+      <div class="reset-actions">
+        <button id="resetCancel" type="button">Cancel</button>
+        <button id="resetConfirm" type="button" class="danger-btn">Erase everything</button>
+      </div>
+    </dialog>
+
     <footer class="foot">
       <span id="thresholds"></span>
     </footer>

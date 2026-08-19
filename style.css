@@ -1,4 +1,4 @@
-﻿/* Bowl -- restyled dashboard surface.
+/* Bowl -- restyled dashboard surface.
    Same markup contract as index.html (identical ids and JS-generated class
    names), so app.js and stats.js drive this page unchanged.
 
@@ -1139,3 +1139,74 @@ body {
   .water, .water-surface { transition-duration: 0.3s; }
   .panel:hover, .tile:hover { transform: none; }
 }
+
+/* --- Reset history --- */
+
+/* No ".card" class exists elsewhere in this stylesheet (only the unrelated
+   #card id on the hero section) -- given a base here so the section reads as
+   a panel like the rest of the page instead of bare text. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift);
+  padding: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.danger-card { border-color: rgba(220, 80, 80, 0.35); }
+
+.danger-btn {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.danger-btn:hover { background: #a93226; }
+.danger-btn:disabled { opacity: 0.6; cursor: default; }
+
+.reset-dialog {
+  max-width: 26rem;
+  border: none;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: inherit;
+  background: var(--surface);
+}
+
+.reset-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+
+.reset-dialog h2 { margin-top: 0; }
+
+.reset-warn { font-weight: 600; color: #c0392b; }
+
+.reset-dialog label { display: block; margin-top: 0.75rem; }
+
+.reset-dialog input[type="password"] {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  background: transparent;
+  color: inherit;
+}
+
+.reset-remember { font-size: 0.9rem; }
+.reset-remember input { width: auto; margin-right: 0.4rem; }
+
+.reset-status { min-height: 1.2em; font-size: 0.9rem; }
+
+.reset-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }

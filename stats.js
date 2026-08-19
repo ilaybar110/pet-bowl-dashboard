@@ -1,8 +1,8 @@
-﻿// Drinking analytics: how much the dog actually drank, when, and whether
+// Drinking analytics: how much the dog actually drank, when, and whether
 // that's normal for it. Kept separate from app.js, which owns the live bowl.
 
 import {
-  doc, onSnapshot, collection, query, orderBy, limit,
+  doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, configured, relativeTime, clockTime } from "./shared.js";
 
@@ -82,7 +82,7 @@ function renderToday() {
   }
 
   el.rangeNote.textContent =
-    `Normal for a ${Math.round(kg)} kg dog is ${Math.round(expectMin)}-${Math.round(expectMax)} ml/day ג€” ${verdict}.`;
+    `Normal for a ${Math.round(kg)} kg dog is ${Math.round(expectMin)}-${Math.round(expectMax)} ml/day — ${verdict}.`;
 
   el.rangeFill.dataset.state =
     today > expectMax ? "over" : today >= expectMin ? "in" : "under";
@@ -174,7 +174,7 @@ function renderHeatmap() {
       // biggest hour look empty.
       const intensity = v > 0 ? Math.sqrt(v / peak) : 0;
       return `<span class="heat-cell" style="--i:${intensity.toFixed(3)}"
-                    title="${d.date} ${h}:00 ג€” ${Math.round(v)} ml"></span>`;
+                    title="${d.date} ${h}:00 — ${Math.round(v)} ml"></span>`;
     }).join("");
     return `<div class="heat-row"><span class="heat-label">${label}</span>
               <span class="heat-cells">${cells}</span></div>`;
@@ -260,11 +260,11 @@ function renderHealth() {
   if (deviation >= 0.4) {
     state = "warn";
     headline = "Drinking noticeably more than usual";
-    detail = `${latestDay.date} was ${Math.round(latestDay.totalG)} ml ג€” about ${Math.round(pct)}% above the ${Math.round(baseline)} ml baseline. A sustained increase is the pattern vets look at; a single hot day is not.`;
+    detail = `${latestDay.date} was ${Math.round(latestDay.totalG)} ml — about ${Math.round(pct)}% above the ${Math.round(baseline)} ml baseline. A sustained increase is the pattern vets look at; a single hot day is not.`;
   } else if (deviation <= -0.4) {
     state = "warn";
     headline = "Drinking noticeably less than usual";
-    detail = `${latestDay.date} was ${Math.round(latestDay.totalG)} ml ג€” about ${Math.round(pct)}% below the ${Math.round(baseline)} ml baseline. Check the bowl was reachable and full on that day before reading anything into it.`;
+    detail = `${latestDay.date} was ${Math.round(latestDay.totalG)} ml — about ${Math.round(pct)}% below the ${Math.round(baseline)} ml baseline. Check the bowl was reachable and full on that day before reading anything into it.`;
   }
 
   const inRange = latestDay.totalG >= min && latestDay.totalG <= max;
@@ -350,3 +350,69 @@ setInterval(() => {
   renderDrinks(drinkRows);
 }, 30000);
 
+// ---------- Reset history ----------
+//
+// The dashboard has no Firestore credentials and cannot delete anything itself.
+// It writes a request; the device validates the secret and does the work. The
+// secret is never stored in this repo -- the repo is public -- so the user types
+// it, with an optional copy in localStorage which is per-browser.
+
+const RESET_SECRET_KEY = "petbowl.resetSecret";
+
+const resetEl = {
+  open: document.getElementById("resetBtn"),
+  dialog: document.getElementById("resetDialog"),
+  secret: document.getElementById("resetSecret"),
+  remember: document.getElementById("resetRemember"),
+  status: document.getElementById("resetStatus"),
+  cancel: document.getElementById("resetCancel"),
+  confirm: document.getElementById("resetConfirm"),
+};
+
+if (resetEl.open && resetEl.dialog) {
+  resetEl.open.addEventListener("click", () => {
+    const saved = localStorage.getItem(RESET_SECRET_KEY) || "";
+    resetEl.secret.value = saved;
+    resetEl.remember.checked = saved.length > 0;
+    resetEl.status.textContent = "";
+    resetEl.dialog.showModal();
+  });
+
+  resetEl.cancel.addEventListener("click", () => resetEl.dialog.close());
+
+  resetEl.confirm.addEventListener("click", async () => {
+    const secret = resetEl.secret.value.trim();
+    if (!secret) {
+      resetEl.status.textContent = "Enter the reset secret.";
+      return;
+    }
+    if (!db) {
+      resetEl.status.textContent = "Firebase is not configured.";
+      return;
+    }
+
+    resetEl.confirm.disabled = true;
+    resetEl.status.textContent = "Sending request…";
+
+    try {
+      await addDoc(collection(db, "control"), {
+        action: "resetHistory",
+        secret,
+        at: serverTimestamp(),
+      });
+
+      if (resetEl.remember.checked) {
+        localStorage.setItem(RESET_SECRET_KEY, secret);
+      } else {
+        localStorage.removeItem(RESET_SECRET_KEY);
+      }
+
+      resetEl.status.textContent =
+        "Request sent. The device picks it up within a minute.";
+    } catch (err) {
+      resetEl.status.textContent = "Could not send the request: " + err.message;
+    } finally {
+      resetEl.confirm.disabled = false;
+    }
+  });
+}
